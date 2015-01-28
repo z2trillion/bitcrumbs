@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.link {
+  stroke: #ccc;
+}
+
+.node text {
+  pointer-events: none;
+  font: 10px sans-serif;
+}
+
+</style>
+<body>
+<script src="../static/js/d3.min.js"></script>
+<script>
+
+var width = 1000,
+    height = 600
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var force = d3.layout.force()
+    .gravity(.01)
+    .distance(0)
+    .charge(-10)
+    .size([width, height]);
+
+var json = d3.json("../static/data/fixed_output.json", plotter)
+
+function plotter(error, json) {
+  json.nodes.forEach(function(d,i){d.x=5*i;d.y=5*i;})
+  force
+      .nodes(json.nodes)
+      .links(json.links)
+      //.linkStrength(function(d) {return d.source.color;})
+      .start();
+
+  var link = svg.selectAll(".link")
+      .data(json.links)
+      .enter().append("line")
+      .attr("class", "link");
+
+  var node = svg.selectAll(".node")
+      .data(json.nodes)
+      .enter().append("g")
+      .attr("class", "node")
+      .call(force.drag);
+
+  node.append("image")
+      .attr("xlink:href", "https://github.com/favicon.ico")
+      .attr("x", -8)
+      .attr("y", -8)
+      .attr("width", 16)
+      .attr("height", 16);
+
+  //node.append("text")
+  //   .attr("dx", 12)
+  //    .attr("dy", ".35em")
+  //    .text(function(d) { return d.name });
+
+  force.on("tick", function() {
+    link.attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; });
+  var k = .05;
+  json.nodes.forEach(function(d, i) {
+    d.y += i & 1 ? k : -k;
+    d.x += i & 2 ? k : -k;
+    });
+  node.attr("transform", function(d) { 
+      return "translate(" + d.x + "," + d.y + ")"; 
+    });
+  });
+};
+
+</script>
