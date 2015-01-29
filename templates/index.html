@@ -10,10 +10,9 @@
   <script src="../static/js/jquery.min.js"></script>
   <script src="../static/js/select2.min.js"></script>
   <script src="../static/js/d3.min.js"></script>
-<script src="../static/js/sankey.js"></script>
+  <script src="../static/js/sankey.js"></script>
 
   <style>
-
   body {
     margin: 50px;
   }
@@ -28,22 +27,22 @@
 
   .node rect {
     cursor: move;
-    //fill-opacity: .2;
     stroke: #000;
     stroke-opacity: 1;
     shape-rendering: geometricPrecision;
   }
 
-  .node text {
-    pointer-events: none;
-    text-shadow: 0 1px 0 #fff;
-  }
 
   .link {
     fill: #000;
     fill-opacity: .2;
     stroke: none;
     stroke-opacity: .2;
+  }
+
+  .node text {
+    pointer-events: none;
+    text-shadow: 0 1px 0 #fff;
   }
 
   .link:hover {
@@ -54,23 +53,20 @@
 </head>
 
 <body>
-<h1>track bitcoins from {{address}}</h1>
 <p>
 
 <label>Address(es):</label> 
-<select class="address_input">
-  <selected="selected">
+<select class="address_input" 
+id="adddress_input_box" style="width: 75%">
 </select>
-
 </p>
 
 <p id="chart">
 
 <script>
-  var margin = {top: 1, right: 1, bottom: 6, left: 1},
+  var margin = {top: 50, right: 50, bottom: 50, left: 50},
   width = 960 - margin.left - margin.right,
   height = 500 - margin.top - margin.bottom;
-
   var formatNumber = d3.format(",.0f"),
     format = function(d) { return formatNumber(d) + " TWh"; },
     color = d3.scale.category20();
@@ -83,7 +79,7 @@
 
   var sankey = d3.sankey()
       .nodeWidth(10)
-      .nodePadding(20)
+      .nodePadding(10)
       .size([width, height]);
 
   var path = sankey.link();

@@ -26,16 +26,18 @@ def transactionGraph(source_address):
 	source_address = Address(source_address)
 	transaction_graph = []
 	contaminated_outputs = PrioritySet()
+	total_contamination = 0
 	for tx in source_address.outgoingTxs():
 		for output in tx.outputs():
 			output.contamination = float(output.value)
+			total_contamination += output.contamination
 			contaminated_outputs.add(output)
 	while len(contaminated_outputs) > 0:
 		height, oldest_output = contaminated_outputs.pop()
 		taint = oldest_output.contamination / oldest_output.value
 		if oldest_output.spend_transaction == str(None):
 			continue
-		elif oldest_output.contamination < 1e10 or taint < 0.1:
+		elif oldest_output.contamination < total_contamination / 50 or taint < 0.1:
 			continue
 		else:
 			transaction_graph.append(oldest_output)
@@ -59,6 +61,39 @@ def graphToDict(graph):
 
 	node_index_map = {transaction: i for i, transaction in enumerate(nodes)}
 	nodes = [{'name':name[:10],'color':weights[name]} for name in nodes]
+
+	edges = []
+	for output in graph:
+		source = node_index_map[output.transaction]
+		sink = node_index_map[output.spend_transaction]
+		edge = {'source': source, 'target': sink, 'value': output.contamination}
+		edges.append(edge)
+	
+	return {'nodes': nodes, 'links': edges}
+
+def graphToDict2(graph):
+	txs = set([output.transaction for output in graph])
+	txs |= set([output.spend_transaction for output in graph])
+	txs = list(txs)
+
+	weights = {}
+	for output in graph:
+		taint = output.contamination / output.value
+		weights[output.transaction] = taint
+		weights[output.spend_transaction] = taint
+
+	node_index_map = {tx: i for i, tx in enumerate(txs)}
+	nodes= []
+	for tx in txs:
+		node = {}
+		node['name'] = tx[:10]
+		node['color'] = weights[tx]
+		if tx.height() is not None:
+			node['xpos'] = tx.height()
+		else:
+			node['xpos'] = 0
+		nodes.append(node)
+	#nodes = [{'name':tx[:10],'color':weights[tx]} for tx in txs]
 
 	edges = []
 	for output in graph:

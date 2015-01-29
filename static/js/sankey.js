@@ -1,10 +1,10 @@
 d3.sankey = function() {
   var sankey = {},
-      nodeWidth = 24,
-      nodePadding = 8,
-      size = [1, 1],
-      nodes = [],
-      links = [];
+  nodeWidth = 24,
+  nodePadding = 10,
+  size = [1, 1],
+  nodes = [],
+  links = [];
 
   sankey.nodeWidth = function(_) {
     if (!arguments.length) return nodeWidth;
@@ -52,38 +52,26 @@ d3.sankey = function() {
 
   sankey.link = function() {
     var curvature = .5;
-
     function link(d) {
-      var x0 = d.source.x + d.source.dx,
-          x1 = d.target.x,
-          xi = d3.interpolateNumber(x0, x1),
-          x2 = xi(curvature),
-          x3 = xi(1 - curvature),
-          y0 = d.source.y + d.sy + d.dy / 2,
-          y1 = d.target.y + d.ty + d.dy / 2,
-					X0 = d.source.x + d.source.dx, 
-          X3 = d.source.x + d.source.dx,
-          X1 = d.target.x, 
-          X2 = d.target.x,
-					Y0 = d.source.y + d.sy + d.dy,
-					Y1 = d.target.y + d.ty + d.dy,
-					Y2 = d.target.y + d.ty,
-					Y3 = d.source.y + d.sy,
+      var X0 = d.source.x + d.source.dx, 
+      X3 = d.source.x + d.source.dx,
+      X1 = d.target.x, 
+      X2 = d.target.x,
+      Y0 = d.source.y + d.sy + d.dy,
+      Y1 = d.target.y + d.ty + d.dy,
+      Y2 = d.target.y + d.ty,
+      Y3 = d.source.y + d.sy,
 
-          Xi = d3.interpolateNumber(X0,X1),
-          X00 = Xi(curvature),
-          X01 = Xi(1-curvature),
-          X10 = Xi(curvature),
-          X11 = Xi(1-curvature);
+      Xi = d3.interpolateNumber(X0,X1),
+      X00 = Xi(curvature),
+      X01 = Xi(1-curvature),
+      X10 = Xi(curvature),
+      X11 = Xi(1-curvature);
 
-      //return "M" + X0 + "," + Y0
-      //    + "L" + X1 + "," + Y1
-      //     + "L" + X2 + "," + Y2
-      //     + "L" + X3 + "," + Y3;
-			return "M" + X0 + "," + Y0
-           + "C" + X00 + "," + Y0 + " " + X01 + "," + Y1 + " " + X1 + "," + Y1
-           + "L" + X2 + "," + Y2
-           + "C" + X01 + "," + Y2 + " " + X00 + "," + Y3 + " " + X3 + "," + Y3;
+      return "M" + X0 + "," + Y0
+      + "C" + X00 + "," + Y0 + " " + X01 + "," + Y1 + " " + X1 + "," + Y1
+      + "L" + X2 + "," + Y2
+      + "C" + X01 + "," + Y2 + " " + X00 + "," + Y3 + " " + X3 + "," + Y3;
     }
 
     link.curvature = function(_) {
@@ -104,8 +92,8 @@ d3.sankey = function() {
     });
     links.forEach(function(link) {
       var source = link.source,
-          target = link.target;
-			if (typeof source === "number") source = link.source = nodes[link.source];
+      target = link.target;
+      if (typeof source === "number") source = link.source = nodes[link.source];
       if (typeof target === "number") target = link.target = nodes[link.target];
       source.sourceLinks.push(link);
       target.targetLinks.push(link);
@@ -118,7 +106,7 @@ d3.sankey = function() {
       node.value = Math.max(
         d3.sum(node.sourceLinks, value),
         d3.sum(node.targetLinks, value)
-      );
+        );
     });
   }
 
@@ -128,8 +116,8 @@ d3.sankey = function() {
   // nodes with no outgoing links are assigned the maximum breadth.
   function computeNodeBreadths() {
     var remainingNodes = nodes,
-        nextNodes,
-        x = 0;
+    nextNodes,
+    x = 0;
 
     while (remainingNodes.length) {
       nextNodes = [];
@@ -173,10 +161,10 @@ d3.sankey = function() {
 
   function computeNodeDepths(iterations) {
     var nodesByBreadth = d3.nest()
-        .key(function(d) { return d.x; })
-        .sortKeys(d3.ascending)
-        .entries(nodes)
-        .map(function(d) { return d.values; });
+    .key(function(d) { return d.x; })
+    .sortKeys(d3.ascending)
+    .entries(nodes)
+    .map(function(d) { return d.values; });
 
     //
     initializeNodeDepth();
@@ -238,10 +226,10 @@ d3.sankey = function() {
     function resolveCollisions() {
       nodesByBreadth.forEach(function(nodes) {
         var node,
-            dy,
-            y0 = 0,
-            n = nodes.length,
-            i;
+        dy,
+        y0 = 0,
+        n = nodes.length,
+        i;
 
         // Push any overlapping nodes down.
         nodes.sort(ascendingDepth);
@@ -269,7 +257,7 @@ d3.sankey = function() {
     }
 
     function ascendingDepth(a, b) {
-      return a.y - b.y;
+      return a.color - b.color;
 			//return .5 - Math.random()
     }
   }
@@ -292,7 +280,7 @@ d3.sankey = function() {
     });
 
     function ascendingSourceDepth(a, b) {
-      return a.source.y - b.source.y;
+      return a.source.color - b.source.color;
     }
 
     function ascendingTargetDepth(a, b) {

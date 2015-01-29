@@ -102,7 +102,10 @@ class Transaction(str):
 		command = 'SELECT blockNumber FROM outputs '
 		command += 'WHERE transactionHash = "%s" LIMIT 1' % self
 		cur.execute(command)
-		return int(cur.fetchone()[0])
+		try:
+			return int(cur.fetchone()[0])
+		except TypeError:
+			return None
 class Output:
 	def __init__(self,row):
 		self.transaction = Transaction(row[0])
