@@ -40,6 +40,9 @@ d3.sankey = function() {
     computeNodeLinks();
     computeNodeValues();
     computeNodeBreadths();
+    //computeNodeDepths(iterations);
+    //computeLinkDepths();
+    //fixXPositions();
     computeNodeDepths(iterations);
     computeLinkDepths();
     return sankey;
@@ -122,7 +125,8 @@ d3.sankey = function() {
     while (remainingNodes.length) {
       nextNodes = [];
       remainingNodes.forEach(function(node) {
-        node.x = x;
+        //node.x = node.x_pos / 10000000.0;
+        node.x = x
         node.dx = nodeWidth;
         node.sourceLinks.forEach(function(link) {
           nextNodes.push(link.target);
@@ -151,7 +155,18 @@ d3.sankey = function() {
         node.x = x - 1;
       }
     });
+    nodes.forEach(function(node) {
+      if (!node.sourceLinks.length) {
+        node.x = node.x;
+      }
+    });
   }
+
+  //function fixXPositions() {
+  //  nodes.forEach(function(node) {
+  //      node.x = 20 * node.xpos;
+  //  });
+  //}
 
   function scaleNodeBreadths(kx) {
     nodes.forEach(function(node) {
@@ -170,7 +185,7 @@ d3.sankey = function() {
     initializeNodeDepth();
     resolveCollisions();
     for (var alpha = 1; iterations > 0; --iterations) {
-      relaxRightToLeft(alpha *= .99);
+      relaxRightToLeft(alpha *= 1);
       resolveCollisions();
       relaxLeftToRight(alpha);
       resolveCollisions();
@@ -257,6 +272,7 @@ d3.sankey = function() {
     }
 
     function ascendingDepth(a, b) {
+      //return a.y - b.y;
       return a.color - b.color;
 			//return .5 - Math.random()
     }
@@ -280,7 +296,7 @@ d3.sankey = function() {
     });
 
     function ascendingSourceDepth(a, b) {
-      return a.source.color - b.source.color;
+      return a.source.y - b.source.y;
     }
 
     function ascendingTargetDepth(a, b) {

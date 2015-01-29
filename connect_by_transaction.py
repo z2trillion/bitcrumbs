@@ -32,6 +32,7 @@ def transactionGraph(source_address):
 			output.contamination = float(output.value)
 			total_contamination += output.contamination
 			contaminated_outputs.add(output)
+	counter = 0
 	while len(contaminated_outputs) > 0:
 		height, oldest_output = contaminated_outputs.pop()
 		taint = oldest_output.contamination / oldest_output.value
@@ -41,12 +42,39 @@ def transactionGraph(source_address):
 			continue
 		else:
 			transaction_graph.append(oldest_output)
+			counter += 1
 		for connected_output in oldest_output.spend_transaction.outputs():
 			contaminated_outputs.add(connected_output)
 			weight = float(connected_output.value) / float(oldest_output.spend_transaction.inputValue())
 			additional_contamination = weight * oldest_output.contamination
 			contaminated_outputs[connected_output].contamination += additional_contamination
 	return transaction_graph
+
+class TransactionGraph:
+	def __init__(self,source_address):
+		source_address = Address(source_address)
+		self.nodes = []
+		contaminated_outputs = PrioritySet()
+		total_contamination = 0
+		for tx in source_address.outgoingTxs():
+			for output in tx.outputs():
+				output.contamination = float(output.value)
+				total_contamination += output.contamination
+				contaminated_outputs.add(output)
+		while len(contaminated_outputs) > 0:
+			height, oldest_output = contaminated_outputs.pop()
+			taint = oldest_output.contamination / oldest_output.value
+			if oldest_output.spend_transaction == str(None):
+				continue
+			elif oldest_output.contamination < total_contamination / 50 or taint < 0.1:
+				continue
+			else:
+				self.nodes.append(oldest_output)
+			for connected_output in oldest_output.spend_transaction.outputs():
+				contaminated_outputs.add(connected_output)
+				weight = float(connected_output.value) / float(oldest_output.spend_transaction.inputValue())
+				additional_contamination = weight * oldest_output.contamination
+				contaminated_outputs[connected_output].contamination += additional_contamination
 
 def graphToDict(graph):
 	nodes = set([output.transaction for output in graph])
@@ -77,10 +105,13 @@ def graphToDict2(graph):
 	txs = list(txs)
 
 	weights = {}
-	for output in graph:
+	ordering = {}
+	for i,output in enumerate(graph):
 		taint = output.contamination / output.value
 		weights[output.transaction] = taint
 		weights[output.spend_transaction] = taint
+		ordering[output.transaction] = i
+		ordering[output.spend_transaction] = i
 
 	node_index_map = {tx: i for i, tx in enumerate(txs)}
 	nodes= []
@@ -88,10 +119,7 @@ def graphToDict2(graph):
 		node = {}
 		node['name'] = tx[:10]
 		node['color'] = weights[tx]
-		if tx.height() is not None:
-			node['xpos'] = tx.height()
-		else:
-			node['xpos'] = 0
+		node['xpos'] = ordering[tx]
 		nodes.append(node)
 	#nodes = [{'name':tx[:10],'color':weights[tx]} for tx in txs]
 
