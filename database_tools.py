@@ -10,12 +10,11 @@ class Address(str):
 		command += 'AND tail.spendHash = head.transactionHash'
 		cur.execute(command)
 		return [Transaction(tx[0]) for tx in cur.fetchall()]
-	def getInputs(self, height):
+	def incomingTxs(self):
 		command = 'SELECT * FROM outputs '
 		command += 'WHERE address = "%s"' % self
-		command += 'AND blockNumber = %i' % height
 		cur.execute(command)
-		inputs = [Output(entry) for entry in cur.fetchall()]
+		inputs = [Coins(entry) for entry in cur.fetchall()]
 		return inputs
 	def getOutputs(self, height):
 		command = 'SELECT b.* '
@@ -24,7 +23,7 @@ class Address(str):
 		command += 'AND a.spendHash = b.transactionHash '
 		command += 'AND b.blockNumber = %i' % block_number
 		cur.execute(command)
-		return [Output(entry) for entry in cur.fetchall()]
+		return [Coins(entry) for entry in cur.fetchall()]
 	def nextTxs(self,block_number):
 		command = 'SELECT MIN(b.blockNumber) FROM outputs a, outputs b '
 		command += 'WHERE a.address = "%s" ' % self
@@ -97,7 +96,7 @@ class Transaction(str):
 		command = 'SELECT * FROM outputs WHERE transactionHash = "%s"'
 		command = command % self
 		cur.execute(command)
-		return [Output(entry) for entry in cur.fetchall()]
+		return [Coins(entry) for entry in cur.fetchall()]
 	def height(self):
 		command = 'SELECT blockNumber FROM outputs '
 		command += 'WHERE transactionHash = "%s" LIMIT 1' % self
@@ -106,7 +105,7 @@ class Transaction(str):
 			return int(cur.fetchone()[0])
 		except TypeError:
 			return None
-class Output:
+class Coins:
 	def __init__(self,row):
 		self.transaction = Transaction(row[0])
 		self.output_index = row[1]
@@ -119,17 +118,23 @@ class Output:
 		return hash((self.output_index,self.transaction))
 	def __eq__(self,other):
 		return hash(self) == hash(other)
-	def getSpendTransactions(self):
+	def nextOutputs(self):
 		command = 'SELECT * FROM outputs '
 		command += 'WHERE transactionHash = "%s" ' % self.spend_transaction 
 		cur.execute(command)
-		return [Output(row) for row in cur.fetchall()]
+		return [Coins(row) for row in cur.fetchall()]
+	def previousInputs(self):
+		command = 'SELECT * FROM outputs '
+		command += 'WHERE spendHash = "%s" ' % self.transaction
+		cur.execute(command)
+		return [Coins(row) for row in cur.fetchall()]
 	def __str__(self):
 		string = 'height: %s ' % self.height
 		string += 'contamination: %e ' % self.contamination
 		string += 'taint: %.2f' % (self.contamination / self.value)
 		return string
-
+	def taint(self):
+		return self.contamination / self.value
 
 if __name__ == '__main__':
 	pizza_address = Address('17SkEw2md5avVNyYgj6RiXuQKNwkXaxFyQ')

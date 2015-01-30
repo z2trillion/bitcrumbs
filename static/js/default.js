@@ -31,42 +31,57 @@ function renderSankey(graph) {
 		.enter().append("path")
 		.attr("class", "link")
 		.attr("d", path)
-	    //.style("fill" , function(d) {return d3.rgb("#000");})
-	    //  .style("stroke-width", function(d) { return Math.max(1, d.dy); })
 	    .style("stroke-width", function(d) { return 1; })
 	    .sort(function(a, b) { return b.dy - a.dy; });
 
 	    link.append("title")
 	    .text(function(d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
 
-	var node = svg.append("g").selectAll(".node")
+	var node = svg.append("g")
+		.selectAll(".node")
 	    .data(graph.nodes)
 	    .enter().append("g")
 	    .attr("class", "node")
 	    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+	    .on("mouseover", nodeMouseover)
+	    .on("mouseout",nodeMouseout)
 	    .call(d3.behavior.drag()
 	    	.origin(function(d) { return d; })
 	    	.on("dragstart", function() { this.parentNode.appendChild(this); })
 	    	.on("drag", dragmove));
+	
+	var information = $("#information")
+	function nodeMouseover(element) {
+		information.text(element.name);
+		x = element.x + 120
+		y = d3.event.pageY - 25
+		information.css({left: x, top: y});
+		information.toggleClass("hidden",false);
+	};
+	function nodeMouseout() {
+		console.log('mouseout');
+		information.toggleClass("hidden",true);
+	};
 
 	node.append("rect")
 	    .attr("height", function(d) { return d.dy; })
 	    .attr("width", sankey.nodeWidth())
-	    .attr("fill" , function (d) {return d3.scale.linear().domain([0,1]).range(["black","red"])(d.color);})
-	    .append("title")
-	    .text(function(d) { return d.color + "\n" + format(d.value); });
-
+	    .attr("fill" , coloring);
+	function coloring(d) {
+		return d3.scale.linear().domain([0,1]).range(["black","red"])(d.color)
+	};
 	function dragmove(d) {
 		d3.select(this).attr("transform", "translate(" + d.x + "," + (d.y = Math.max(0, Math.min(height - d.dy, d3.event.y))) + ")");
 		sankey.relayout();
 		link.attr("d", path);
-	}	
+	};	
 };
 
 $(document).ready(function() {
 	$(".address_input").select2({
 	  	multiple: true,
 	  	placeholder: "Address or Transaction",
+	  	maximumSelectionLength: 2,
 	  	minimumInputLength: 1,
 	  	ajax: {
 	  		url: "/addresses",

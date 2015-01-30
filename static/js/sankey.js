@@ -155,11 +155,6 @@ d3.sankey = function() {
         node.x = x - 1;
       }
     });
-    nodes.forEach(function(node) {
-      if (!node.sourceLinks.length) {
-        node.x = node.x;
-      }
-    });
   }
 
   //function fixXPositions() {
@@ -272,8 +267,9 @@ d3.sankey = function() {
     }
 
     function ascendingDepth(a, b) {
-      //return a.y - b.y;
-      return a.color - b.color;
+      return a.y - b.y;
+      //return a.color - b.color;
+      //return a.xpos + a.color - b.xpos - b.color;
 			//return .5 - Math.random()
     }
   }
