@@ -2,8 +2,6 @@ import heapq, sys
 import numpy as np
 from database_tools import Address, Transaction, Coins
 
-NULL_HASH = 64*'0'
-
 class PrioritySet():
 	def __init__(self, min_heap = True):
 		self.heap = [] # heap of keys to elements
@@ -29,35 +27,50 @@ class PrioritySet():
 	def __getitem__(self,output):
 		return self.elements[output]
 
-class DirectedGraph:
+class WeightedDAG:
 	def __init__(self):
 		self.nodes = set([])
-		self.edges = []
+		self.edges = set([])
 	def addNode(self,node):
 		self.nodes.add(node)
+	def addEdge(self,edge):
+		self.edges.add(edge)
 
-class TransactionGraph(DirectedGraph):	
+class Edge:
+	def __init__(self, source, sink, flows):
+		self.source = source
+		self.sink = sink
+		self.flows = flows
 
-	def __init__(self, source_address_strings):
-		DirectedGraph.__init__(self)
-		source_addresses = [Address(s) for s in source_address_strings]
-		self.backwardinTime(source_addresses)
-		self.forwardInTime(source_addresses)
+class Node:
+	def __init__(self,coins,coinbase=False,unspent=False):
+		self.block_height = coins.height
+		self.address = coins.address
+		self.coinbase = coinbase
+		self.unspent = unspent
+		self.contamination = coins.contamination
 
-	def backwardinTime(self, source_addresses):
+class TransactionGraph(WeightedDAG):	
+	def __init__(self):
+		WeightedDAG.__init__(self)
+
+	def addSourceAddress(self, address_string, index=0):
+		address = Address(address_string)
+		self.backwardInTime(address, index)
+		self.forwardInTime(address, index)
+
+	def backwardInTime(self, source_address, index):
 		contaminated_inputs = PrioritySet(min_heap = False)
-		total_contamination = np.zeros(len(source_addresses))
+		total_contamination = 0
 
-		for i, address in enumerate(source_addresses):
-			for input in address.incomingTxs():
-				input = contaminated_inputs.add(input)
-				try:
-					input.contamination[i] = float(input.value)
-				except AttributeError:
-					input.contamination = np.zeros(len(source_addresses))
-					input.contamination[i] = float(input.value)
-				total_contamination[i] += input.contamination[i]
-				contaminated_inputs.add(input)
+		for input in source_address.outgoingTxs():
+			input.contamination[i] = float(input.value)
+			except AttributeError:
+				input.contamination = np.zeros(len(source_addresses))
+				input.contamination[i] = float(input.value)
+			total_contamination[i] += input.contamination[i]
+			contaminated_inputs.add(input)
+		
 		while len(contaminated_inputs) > 0 and len(self.nodes) < 100:
 			height, input = contaminated_inputs.pop()
 			
@@ -76,9 +89,7 @@ class TransactionGraph(DirectedGraph):
 				try:
 					previous_input.contamination += additional_contamination
 				except AttributeError:
-					previous_input.contamination = additional_contamination
-			if i == 0:
-				print 'coinbase transaction!'
+					previous_input.contamination = np.copy(additional_contamination)
 
 	def forwardInTime(self, source_addresses):
 		contaminated_outputs = PrioritySet()
@@ -110,7 +121,7 @@ class TransactionGraph(DirectedGraph):
 				try:
 					next_output.contamination += additional_contamination	
 				except AttributeError:
-					next_output.contamination = additional_contamination
+					next_output.contamination = np.copy(additional_contamination)
 
 	def toDict(self):
 		graph = self.nodes

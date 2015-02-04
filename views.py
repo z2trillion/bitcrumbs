@@ -12,8 +12,9 @@ def index():
 	#return render_template('d3_test.html')
 @app.route('/bitcoinFlow')
 def bitcoinFlow():
-	address = request.args.get('address','',type=str)
-	graph = TransactionGraph(address).toDict()
+	address = request.args.get('address', 'error' ,type=str)
+	print address.split(',') 
+	graph = TransactionGraph(address.split(',')).toDict()
 	return jsonify(graph)
 
 @app.route('/addresses')

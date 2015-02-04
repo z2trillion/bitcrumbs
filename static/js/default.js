@@ -1,3 +1,5 @@
+var information = $("#information")
+
 function fetchData(address) {
 	$.ajax({
 		type: "GET",
@@ -5,15 +7,20 @@ function fetchData(address) {
 		data: {'address' : address}
 	})
 	.done(function(data){
-		if (data.length == 0) { 
-			destroySankey();
-		} else {
-			renderSankey(data);
-		}
+		destroySankey();
+		renderSankey(data);
 	})
 	.fail(function(data){
 		console.log('Could not load json.',data);
 	});
+};
+
+function clearInformation() {
+	console.log('asdfasd')
+	information.find("#address").text("\u0020");
+	information.find("#transaction_hash").text("\u0020");
+	information.find("#taint").text("\u0020");
+	information.find("#value").text("\u0020");
 };
 
 function destroySankey() {
@@ -34,8 +41,8 @@ function renderSankey(graph) {
 	    .style("stroke-width", function(d) { return 1; })
 	    .sort(function(a, b) { return b.dy - a.dy; });
 
-	    link.append("title")
-	    .text(function(d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
+	    //link.append("title")
+	    //.text(function(d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
 
 	var node = svg.append("g")
 		.selectAll(".node")
@@ -44,23 +51,21 @@ function renderSankey(graph) {
 	    .attr("class", "node")
 	    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
 	    .on("mouseover", nodeMouseover)
-	    .on("mouseout",nodeMouseout)
+	    //.on("mouseout",nodeMouseout)
 	    .call(d3.behavior.drag()
 	    	.origin(function(d) { return d; })
 	    	.on("dragstart", function() { this.parentNode.appendChild(this); })
 	    	.on("drag", dragmove));
 	
-	var information = $("#information")
 	function nodeMouseover(element) {
-		information.text(element.name);
-		x = element.x + 120
-		y = d3.event.pageY - 25
-		information.css({left: x, top: y});
+		information.find("#address").text(element.address);
+		information.find("#transaction_hash").text(element.name);
+		information.find("#taint").text(element.color);
+		information.find("#value").text("\u0e3f " + element.btc_value);
+		//x = element.x + 120
+		//y = d3.event.pageY - 25
+		//information.css({left: x, top: y});
 		information.toggleClass("hidden",false);
-	};
-	function nodeMouseout() {
-		console.log('mouseout');
-		information.toggleClass("hidden",true);
 	};
 
 	node.append("rect")
@@ -68,7 +73,7 @@ function renderSankey(graph) {
 	    .attr("width", sankey.nodeWidth())
 	    .attr("fill" , coloring);
 	function coloring(d) {
-		return d3.scale.linear().domain([0,1]).range(["black","red"])(d.color)
+		return d.color
 	};
 	function dragmove(d) {
 		d3.select(this).attr("transform", "translate(" + d.x + "," + (d.y = Math.max(0, Math.min(height - d.dy, d3.event.y))) + ")");
@@ -106,9 +111,13 @@ $(document).ready(function() {
 	  	var addresses = $(".address_input").val();
 	  	if (addresses == null){
 	  		destroySankey();
+	  		clearInformation();
 	  	}
 	  	else {
-	  		fetchData(addresses[0]);
+	  		//console.log(addresses+"asd.fljasld;kjfal;skd");
+			var s = addresses.reduce(function(x,y){return x+","+y;});
+			//console.log(s);
+	  		fetchData(s);
 	  	}	 
 	}); 
 });

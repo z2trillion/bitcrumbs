@@ -1,6 +1,35 @@
-.hidden {
-  display: none;
-}
+ body {
+    margin: 50px;
+  }
+
+  .address_input {
+    width: 300px;
+  }
+
+  #chart {
+  	padding-top: 50px;
+    height: 500px;
+  }
+
+  .node rect {
+    cursor: move;
+    stroke: #000;
+    stroke-opacity: 1;
+    shape-rendering: geometricPrecision;
+  }
+
+
+  .link {
+    fill: #000;
+    fill-opacity: .2;
+    stroke: none;
+    stroke-opacity: .2;
+  }
+
+  .node text {
+    pointer-events: none;
+    text-shadow: 0 1px 0 #fff;
+  }
  
 #information {
   position: absolute;
@@ -9,4 +38,21 @@
   padding: 8px;
   padding-top: 5px;
   padding-bottom: 5px;
+  margin-bottom: 10px;
+}
+
+#address_input_box {
+	width: 75%;
+}
+
+table{
+    /*border: 1px solid black;*/
+    table-layout: fixed;
+    width: 75%;
+}
+
+th, td {
+    /*border: 1px solid black;*/
+    overflow: hidden;
+    /*width: 100px;*/
 }

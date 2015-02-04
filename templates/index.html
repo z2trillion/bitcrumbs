@@ -1,71 +1,51 @@
 <html>
-<head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sankey Diagram</title>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <link rel="stylesheet" type="text/css" href="../static/css/bootstrap.min.css" />
-  <link rel="stylesheet" type="text/css" href="../static/css/select2.min.css" />
-  <link rel="stylesheet" type="text/css" href="../static/css/style.css" />
-  <script src="../static/js/jquery.min.js"></script>
-  <script src="../static/js/select2.min.js"></script>
-  <script src="../static/js/d3.min.js"></script>
-  <script src="../static/js/sankey.js"></script>
+    <link rel="stylesheet" type="text/css" href="../static/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="../static/css/select2.min.css" />
+    <link rel="stylesheet" type="text/css" href="../static/css/style.css" />
+    <script src="../static/js/jquery.min.js"></script>
+    <script src="../static/js/select2.min.js"></script>
+    <script src="../static/js/d3.min.js"></script>
+    <script src="../static/js/sankey.js"></script>
 
-  <style>
-  body {
-    margin: 50px;
-  }
+    <title>BitCrumbs</title>  
+  </head>
 
-  .address_input {
-    width: 300px;
-  }
+  <body>
+    <p>
 
-  #chart {
-    height: 500px;
-  }
-
-  .node rect {
-    cursor: move;
-    stroke: #000;
-    stroke-opacity: 1;
-    shape-rendering: geometricPrecision;
-  }
-
-
-  .link {
-    fill: #000;
-    fill-opacity: .2;
-    stroke: none;
-    stroke-opacity: .2;
-  }
-
-  .node text {
-    pointer-events: none;
-    text-shadow: 0 1px 0 #fff;
-  }
-
-  .link:hover {
-    fill-opacity: .5;
-  }
-
-  </style>
-</head>
-
-<body>
-<p>
-
-<label>Address(es):</label> 
-<select class="address_input" 
-id="address_input_box" style="width: 75%">
-</select>
-</p>
-
+<label>Address(es): </label> 
+<select class="address_input" id="address_input_box"></select>
+<div id="information">
+  <table>
+    <col width="600">
+    <col width="200">
+    <tr>
+      <th>Address</th>
+      <th>Value</th>
+    </tr>
+    <tr>
+      <td><span id="address"></span>&nbsp;</td> 
+      <td><span id="value"></span>&nbsp;</td>
+    </tr>
+       <tr>
+      <th>Transaction Hash</th> 
+      <th>Taint</th>
+    </tr>
+    <tr>
+      <td><span id="transaction_hash">&nbsp;</span></td> 
+      <td><span id="taint"></span>&nbsp;</td>
+    </tr>
+  </table>
+</div>
+<br \>
 <p id="chart">
-<div id="information" class="hidden"></div>
 <script>
-  var margin = {top: 50, right: 50, bottom: 50, left: 50},
+  var margin = {top: 25, right: 0, bottom: 50, left: 0},
   width = 960 - margin.left - margin.right,
   height = 500 - margin.top - margin.bottom;
   var formatNumber = d3.format(",.0f"),
@@ -80,7 +60,7 @@ id="address_input_box" style="width: 75%">
 
   var sankey = d3.sankey()
       .nodeWidth(10)
-      .nodePadding(15)
+      .nodePadding(10)
       .size([width, height]);
 
   var path = sankey.link();
