@@ -69,12 +69,16 @@ class Address(str):
 
 class Transaction(str):
 
+	@property
 	def id(self):
 		command = 'SELECT MIN(id) FROM tx_outputs '
 		command += 'WHERE transactionHash = "%s"' % self
 		cur.execute(command)
-		return int(cur.fetchone()[0])		
-
+		try:
+			return int(cur.fetchone()[0])		
+		except TypeError:
+			print self
+			raise
 	@property
 	def inputs(self):
 		command = 'SELECT * FROM tx_outputs '
@@ -88,14 +92,25 @@ class Transaction(str):
 		cur.execute(command)
 		return int(cur.fetchone()[0])
 
+	@property
 	def inputValue(self):
-		command = 'SELECT SUM(value) FROM outputs WHERE spendHash = "%s"'
+		command = 'SELECT SUM(value) FROM tx_outputs WHERE spendHash = "%s"'
 		command = command % self
 		cur.execute(command)
 		try:
 			return float(cur.fetchone()[0])
 		except TypeError:
-			return 0.0
+			raise Exception('Looking for inputs to a coinbase transaction')
+
+	@property
+	def outputValue(self):
+		command = 'SELECT SUM(value) FROM tx_outputs WHERE transactionHash = "%s"'
+		command = command % self
+		cur.execute(command)
+		try:
+			return float(cur.fetchone()[0])
+		except TypeError:
+			return 0.0 # a transaction with no outputs. do these exist?
 
 	@property
 	def outputs(self):
@@ -121,7 +136,7 @@ def multiton(cls):
 @multiton # on transction and output index
 class Coins:
 	def __init__(self, row):
-		print row
+		#print row
 		row = row[1:]
 		self.transaction = Transaction(row[0])
 		self.output_index = row[1]
@@ -132,7 +147,7 @@ class Coins:
 
 		self.sinks = set([])
 		self.is_source = False
-		self.contamination = 0
+		self.contamination = None
 
 	def nextOutputs(self):
 		command = 'SELECT * FROM outputs '

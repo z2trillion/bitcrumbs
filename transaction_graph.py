@@ -13,9 +13,9 @@ class HeapSet:
 		if tx not in self.elements:
 			self.elements.add(tx)
 			if self.min_heap:
-				priority = tx.id()
+				priority = tx.id
 			else:
-				priority = -tx.id()
+				priority = -tx.id
 			heapq.heappush(self.heap, (priority, tx))
 	def pop(self):
 		priority, tx = heapq.heappop(self.heap)
@@ -35,81 +35,80 @@ class TransactionGraph:
 	def addSourceAddress(self, address_string, index = 0):
 		address = Address(address_string)
 		self.backwardInTime(address)
-		#self.forwardInTime(address, index)
+		self.forwardInTime(address)
 	
 	def backwardInTime(self, address):
-
 		contaminated_txs = HeapSet(min_heap = False)
 		total_contamination = 0
 
-		n_inputs = address.n_inputs
-		print n_inputs
+		funding_inputs = address.inputs
 
-		for i, input in enumerate(address.inputs):
-			input.contamination = np.zeros(n_inputs)
-			input.contamination[i] = input.value
-			total_contamination +=  input.value
+		for input in funding_inputs:
+			total_contamination += input.value
 			contaminated_txs.add(input.transaction)
-		print 'loaded source transaction(s)'
 
 		while len(contaminated_txs) > 0:
-			height, tx = contaminated_txs.pop()
+			tx_id, tx = contaminated_txs.pop()
 
-			tx_contamination = 0			
+			tx_contamination = np.zeros(len(funding_inputs))			
 			for output in tx.outputs:
-				tx_contamination += output.contamination
-			total_input = tx.inputValue()
+				if output in funding_inputs:
+					if output.contamination is None:
+						output.contamination = np.zeros(len(funding_inputs))
+					new_contamination = output.value - output.contamination.sum()
+					#assert new_contamination >= 0
+					output.contamination[funding_inputs.index(output)] = new_contamination
+				if output.contamination is not None:
+					tx_contamination += output.contamination
+			
+			if tx_contamination.sum() < (total_contamination / 100):
+				continue
 
-			print 'computed input value'
-
-			#print total_contamination
-
-			#if tx_contamination < (total_contamination / 1e100):
-			#	continue
-			#elif tx_contamination / total_input < 0:#.00000000001:
-			#	continue
-
-			#print tx, tx_contamination, total_input
-			print -height, tx
+			print tx_id, tx, '%.2e' %tx_contamination.sum(), tx_contamination.sum() / tx.outputValue
 			for input in tx.inputs:
-				weight = input.value / total_input
-				assert weight <= 1
-				assert input.contamination == 0
-				input.contamination += weight * tx_contamination
+				weight = input.value / tx.inputValue
+				#assert input.contamination is None
+				input.contamination = weight * tx_contamination
 				contaminated_txs.add(input.transaction)
-				assert input.contamination <= input.value
-				print len(contaminated_txs)
 
 		
-		
+	def forwardInTime(self, address):
+		contaminated_txs = HeapSet(min_heap = True)
+		total_contamination = 0
 
-	def forwardInTime(self, address, index):
-		contaminated_coins, total_contamination = self.seedOutputs(address,'forward',index)
+		funding_inputs = address.inputs
 
-		while len(contaminated_coins) > 0 and len(self.nodes) < 1000:
-			height, coins = contaminated_coins.pop()
+		for input in funding_inputs:
+			total_contamination += input.value
+			contaminated_txs.add(input.transaction)
 
-			if coins.contamination[index] < total_contamination / 100:
+		while len(contaminated_txs) > 0:
+			tx_id, tx = contaminated_txs.pop()
+
+			tx_contamination = np.zeros(len(funding_inputs))			
+			for input in tx.inputs:
+				#if input in funding_inputs:
+					#assert input.contamination is not None
+				if input.contamination is not None:
+					tx_contamination += input.contamination
+			
+			if tx_contamination.sum() < (total_contamination / 100):
 				continue
-			elif coins.forward_taint(index) < 0.01:
-				continue
-			else:
-				self.addNode(coins)
-				print coins
-			if coins.notSpent():
+			if tx_contamination.sum() < (total_contamination / 100):
 				continue
 
-			total_input_value = float(coins.spend_transaction.inputValue())
-			total_output_value = 0
-			for next_coins in coins.nextOutputs():
-				weight = next_coins.value / total_input_value
-				additional_contamination = weight * coins.contamination
-				next_coins.contamination += additional_contamination	
-				if next_coins.contamination[index] > next_coins.value:
-					next_coins.contamination[index] = next_coins.value
-				
-				contaminated_coins.add(next_coins)
-				coins.addSink(next_coins,additional_contamination)
+			print tx_id, tx, '%.2e' %tx_contamination.sum(), tx_contamination.sum() / tx.outputValue
+
+			for output in tx.outputs:
+				weight = output.value / tx.inputValue
+				if output.contamination is None:
+					output.contamination = weight * tx_contamination
+				else:	
+					untouched = output.contamination == 0
+					output.contamination[untouched] = weight * tx_contamination[untouched]
+				#assert output.contamination.sum() <= output.value + 1, (output.transaction, output.contamination.sum(), output.value, output.contamination, untouched, tx_contamination)
+				if output.spend_transaction != 'Unspent':
+					contaminated_txs.add(output.spend_transaction)
 
 	def addNode(self,node):
 		self.nodes.add(node)
