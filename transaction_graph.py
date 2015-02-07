@@ -2,7 +2,7 @@
 
 import heapq, sys
 import numpy as np
-from db_tools import Address, Transaction, Coins
+import db_tools
 
 class HeapSet:
 	def __init__(self, min_heap = True):
@@ -33,7 +33,7 @@ class TransactionGraph:
 		self.edges = set([])
 
 	def addSourceAddress(self, address_string, index = 0):
-		address = Address(address_string)
+		address = db_tools.Address(address_string)
 		self.backwardInTime(address)
 		self.forwardInTime(address)
 	
@@ -56,21 +56,23 @@ class TransactionGraph:
 					if output.contamination is None:
 						output.contamination = np.zeros(len(funding_inputs))
 					new_contamination = output.value - output.contamination.sum()
-					#assert new_contamination >= 0
 					output.contamination[funding_inputs.index(output)] = new_contamination
 				if output.contamination is not None:
 					tx_contamination += output.contamination
 			
-			if tx_contamination.sum() < (total_contamination / 100):
+			try:
+				input_value = tx.inputValue
+			except KeyError:
 				continue
 
-			print tx_id, tx, '%.2e' %tx_contamination.sum(), tx_contamination.sum() / tx.outputValue
 			for input in tx.inputs:
-				weight = input.value / tx.inputValue
-				#assert input.contamination is None
+				weight = input.value / input_value
 				input.contamination = weight * tx_contamination
-				contaminated_txs.add(input.transaction)
-
+				if input.value > total_contamination / 200:
+					contaminated_txs.add(input.transaction)
+					self.addNode(input)
+					self.addEdges(input,tx.outputs)
+					print input
 		
 	def forwardInTime(self, address):
 		contaminated_txs = HeapSet(min_heap = True)
@@ -87,31 +89,28 @@ class TransactionGraph:
 
 			tx_contamination = np.zeros(len(funding_inputs))			
 			for input in tx.inputs:
-				#if input in funding_inputs:
-					#assert input.contamination is not None
 				if input.contamination is not None:
 					tx_contamination += input.contamination
 			
-			if tx_contamination.sum() < (total_contamination / 100):
-				continue
-			if tx_contamination.sum() < (total_contamination / 100):
-				continue
-
-			print tx_id, tx, '%.2e' %tx_contamination.sum(), tx_contamination.sum() / tx.outputValue
+			input_value = tx.inputValue
 
 			for output in tx.outputs:
-				weight = output.value / tx.inputValue
+				weight = output.value / input_value
 				if output.contamination is None:
 					output.contamination = weight * tx_contamination
 				else:	
 					untouched = output.contamination == 0
 					output.contamination[untouched] = weight * tx_contamination[untouched]
-				#assert output.contamination.sum() <= output.value + 1, (output.transaction, output.contamination.sum(), output.value, output.contamination, untouched, tx_contamination)
-				if output.spend_transaction != 'Unspent':
-					contaminated_txs.add(output.spend_transaction)
+				if output.contamination.sum() > total_contamination / 200:
+					if output.spend_transaction != 'Unspent':
+						contaminated_txs.add(output.spend_transaction)
+					print output
 
 	def addNode(self,node):
-		self.nodes.add(node)
+		pass
+
+	def addEdges(self,edge):
+		pass
 
 	def connectEdges(self):
 		#print self.nodes
@@ -188,9 +187,11 @@ def colorScale(x):
 
 
 if __name__ == '__main__':
-	#pizza_address = '17SkEw2md5avVNyYgj6RiXuQKNwkXaxFyQ'
-	#g = TransactionGraph()
-	#g.addSourceAddress(pizza_address)
+	pizza_address = '17SkEw2md5avVNyYgj6RiXuQKNwkXaxFyQ'
+	g = TransactionGraph()
+	g.addSourceAddress(pizza_address)
+
+	db_tools.instances = {}
 
 	mtgox_address = '1eHhgW6vquBYhwMPhQ668HPjxTtpvZGPC'
 	g = TransactionGraph()

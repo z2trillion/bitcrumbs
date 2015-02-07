@@ -100,7 +100,7 @@ class Transaction(str):
 		try:
 			return float(cur.fetchone()[0])
 		except TypeError:
-			raise Exception('Looking for inputs to a coinbase transaction')
+			raise KeyError('Looking for inputs to a coinbase transaction')
 
 	@property
 	def outputValue(self):
@@ -123,9 +123,9 @@ class Transaction(str):
 		return hash('%s' %self)
 
 NULL_HASH = 64*'0'
+instances = {}
 
 def multiton(cls):
-	instances = {}
 	def getInstance(row):
 		key = tuple(row[:2])
 		if key not in instances:
@@ -164,8 +164,9 @@ class Coins:
 	def __str__(self):
 		string = 'height: %i ' %self.height
 		string += 'address: %s ' %self.address
-		string += 'value: %e ' %self.value
-		string += 'contamination: %e ' %self.contamination
+		string += 'value: %.2e ' %self.value
+		string += 'contamination: %.2e ' %self.contamination.sum()
+		string += 'taint: %.2f ' %(self.contamination.sum() / self.value)
 		#assert self.contamination[0] <= self.value
 		#string += 'taint: %e ' %(self.contamination.max() / self.value)
 		#string += 'backward_taint: %e ' %(self.backward_contamination[0] / self.value)

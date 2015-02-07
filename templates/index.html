@@ -3,7 +3,6 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <link rel="stylesheet" type="text/css" href="../static/css/bootstrap.min.css" />
     <link rel="stylesheet" type="text/css" href="../static/css/select2.min.css" />
     <link rel="stylesheet" type="text/css" href="../static/css/style.css" />
@@ -11,61 +10,35 @@
     <script src="../static/js/select2.min.js"></script>
     <script src="../static/js/d3.min.js"></script>
     <script src="../static/js/sankey.js"></script>
-
     <title>BitCrumbs</title>  
   </head>
-
   <body>
-    <p>
-
-<label>Address(es): </label> 
-<select class="address_input" id="address_input_box"></select>
-<div id="information">
-  <table>
-    <col width="600">
-    <col width="200">
-    <tr>
-      <th>Address</th>
-      <th>Value</th>
-    </tr>
-    <tr>
-      <td><span id="address"></span>&nbsp;</td> 
-      <td><span id="value"></span>&nbsp;</td>
-    </tr>
-       <tr>
-      <th>Transaction Hash</th> 
-      <th>Taint</th>
-    </tr>
-    <tr>
-      <td><span id="transaction_hash">&nbsp;</span></td> 
-      <td><span id="taint"></span>&nbsp;</td>
-    </tr>
-  </table>
-</div>
-<br \>
-<p id="chart">
-<script>
-  var margin = {top: 25, right: 0, bottom: 50, left: 0},
-  width = 960 - margin.left - margin.right,
-  height = 500 - margin.top - margin.bottom;
-  var formatNumber = d3.format(",.0f"),
-    format = function(d) { return formatNumber(d) + " TWh"; },
-    color = d3.scale.category20();
-
-  var svg = d3.select("#chart").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-  var sankey = d3.sankey()
-      .nodeWidth(10)
-      .nodePadding(10)
-      .size([width, height]);
-
-  var path = sankey.link();
-</script>
-<script src="../static/js/default.js"></script>
-</body>
-
+    <!--<h1>BitCrumbs</h1>-->
+    <div class="wrapper">
+      <select class="address_input" id="address_input_box"></select>
+      <div id="information">
+        <ul>
+          <li class="col-md-8">
+            <label>Address</label>
+            <span class="dynamic-content" id="address"></span>
+          </li>
+          <li class="col-md-4">
+            <label>Value</label>
+            <span class="dynamic-content" id="value"></span>
+          </li>
+          <li class="col-md-8">
+            <label>Transaction Hash</label>
+            <span class="dynamic-content" id="transaction_hash"></span>
+          </li>
+          <li class="col-md-4">
+            <label>Taint</label>
+            <span class="dynamic-content" id="taint"></span>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <!-- Sankey Diagram -->
+    <div id="chart"></div>
+    <script src="../static/js/default.js"></script>
+  </body>
 </html>

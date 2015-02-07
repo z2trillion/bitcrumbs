@@ -1,3 +1,27 @@
+var windowHeight = $(window).height();
+var windowWidth = $(window).width();
+
+var margin = {top: 0, right: 50, bottom: 0, left: 0},
+width = windowWidth - 50 - margin.right,
+height = windowHeight - 250 - margin.bottom;
+
+var formatNumber = d3.format(",.0f"),
+format = function(d) { return formatNumber(d) + " TWh"; },
+color = d3.scale.category20();
+
+var svg = d3.select("#chart").append("svg")
+	.attr("width", width + margin.left + margin.right)
+	.attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var sankey = d3.sankey()
+	.nodeWidth(10)
+	.nodePadding(10)
+	.size([width, height]);
+
+var path = sankey.link();
+
 var information = $("#information")
 
 function fetchData(address) {
@@ -85,7 +109,7 @@ function renderSankey(graph) {
 $(document).ready(function() {
 	$(".address_input").select2({
 	  	multiple: true,
-	  	placeholder: "Address or Transaction",
+	  	placeholder: "Enter bitcoin address(es) here!",
 	  	maximumSelectionLength: 2,
 	  	minimumInputLength: 1,
 	  	ajax: {
@@ -107,6 +131,7 @@ $(document).ready(function() {
 	  		return address.name;
 	  	}
 	});
+
 	$(".address_input").on("change", function (e) {
 	  	var addresses = $(".address_input").val();
 	  	if (addresses == null){
@@ -120,4 +145,6 @@ $(document).ready(function() {
 	  		fetchData(s);
 	  	}	 
 	}); 
+
+	// 
 });
