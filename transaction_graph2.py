@@ -153,7 +153,7 @@ def colorFunction(x):
 	return '#' + colorScale(x) + colorScale(0) + colorScale(0) 
 
 def colorScale(x):
-	x = int(255 * x)
+	x = int(255 * np.sqrt(x))
 	result = chr(x).encode('hex')
 	return result
 

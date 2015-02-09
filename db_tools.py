@@ -1,7 +1,7 @@
 import pymysql as mdb
 import numpy as np
 
-con = mdb.connect('localhost','root','','bitcoin')
+con = mdb.connect('localhost','root','password','bitcoin')
 cur = con.cursor()
 
 class Address(str):

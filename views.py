@@ -5,7 +5,7 @@ from BitCrumbs import app
 import pymysql as mdb
 from transaction_graph2 import TransactionGraph
 
-con = mdb.connect('localhost','root','','bitcoin')
+con = mdb.connect('localhost','root','password','bitcoin')
 
 @app.route('/')
 @app.route('/index')
