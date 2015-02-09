@@ -55,14 +55,14 @@ function renderSankey(graph) {
 	sankey
 		.nodes(graph.nodes)
 		.links(graph.links)
-		.layout(100);
+		.layout(32);
 
 	var link = svg.append("g").selectAll(".link")
 		.data(graph.links)
 		.enter().append("path")
 		.attr("class", "link")
 		.attr("d", path)
-	    .style("stroke-width", function(d) { return 1; })
+	    //.style("stroke-width", function(d) { return 1; })
 	    .sort(function(a, b) { return b.dy - a.dy; });
 
 	    //link.append("title")
@@ -89,7 +89,7 @@ function renderSankey(graph) {
 		//x = element.x + 120
 		//y = d3.event.pageY - 25
 		//information.css({left: x, top: y});
-		information.toggleClass("hidden",false);
+		//information.toggleClass("hidden",false);
 	};
 
 	node.append("rect")
@@ -108,10 +108,10 @@ function renderSankey(graph) {
 
 $(document).ready(function() {
 	$(".address_input").select2({
-	  	multiple: true,
 	  	placeholder: "Enter bitcoin address(es) here!",
 	  	maximumSelectionLength: 2,
 	  	minimumInputLength: 1,
+	  	multiple: true,
 	  	ajax: {
 	  		url: "/addresses",
 	  		dataType: 'json',
@@ -139,9 +139,7 @@ $(document).ready(function() {
 	  		clearInformation();
 	  	}
 	  	else {
-	  		//console.log(addresses+"asd.fljasld;kjfal;skd");
 			var s = addresses.reduce(function(x,y){return x+","+y;});
-			//console.log(s);
 	  		fetchData(s);
 	  	}	 
 	}); 

@@ -3,31 +3,35 @@ from flask import request,jsonify
 import json,os
 from BitCrumbs import app
 import pymysql as mdb
-from connect_by_transaction import TransactionGraph
+from transaction_graph import TransactionGraph
+
+con = mdb.connect('localhost','root','','bitcoin')
 
 @app.route('/')
 @app.route('/index')
 def index():
 	return render_template("index.html")
-	#return render_template('d3_test.html')
+
 @app.route('/bitcoinFlow')
 def bitcoinFlow():
-	address = request.args.get('address', 'error' ,type=str)
-	print address.split(',') 
-	graph = TransactionGraph(address.split(',')).toDict()
-	return jsonify(graph)
+	address = request.args.get('address', 'error', type=str)
+	#print address.split(',') 
+	graph = TransactionGraph()
+	graph.addSourceAddress(address.split(',')[0])
+	return jsonify(graph.toDict())
 
 @app.route('/addresses')
 def addresses():
-	con = mdb.connect('localhost','root','','bitcoin')
-	cur = con.cursor()
-	address_query = request.args.get('q','',type=str)
-	command = 'SELECT DISTINCT address FROM outputs '
-	command += 'WHERE spendHash NOT LIKE "0000000000%%" '
-	command += 'AND address LIKE "%s%%" LIMIT 10' % address_query
-	# sort by address input/outout?
-	cur.execute(command)
-	results = cur.fetchall()
+	with con:
+		cur = con.cursor()
+		address_query = request.args.get('q','',type=str)
+		command = 'SELECT DISTINCT address FROM tx_outputs '
+		command += 'WHERE spendHash NOT LIKE "Unspent" '
+		command += 'AND value > 10000 '
+		command += 'AND address LIKE "%s%%" LIMIT 10' % address_query
+		cur.execute(command)
+		results = cur.fetchall()
+	
 	address_list = []
 	for result in results:
 		address_list.append({'id':result[0],'name':result[0]})

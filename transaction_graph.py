@@ -29,8 +29,8 @@ class HeapSet:
 
 class TransactionGraph:	
 	def __init__(self):
-		self.nodes = set([])
-		self.edges = set([])
+		self.nodes = []
+		self.edges = {}
 
 	def addSourceAddress(self, address_string, index = 0):
 		address = db_tools.Address(address_string)
@@ -39,18 +39,22 @@ class TransactionGraph:
 	
 	def backwardInTime(self, address):
 		contaminated_txs = HeapSet(min_heap = False)
-		total_contamination = 0
-
+		
 		funding_inputs = address.inputs
-
-		for input in funding_inputs:
-			total_contamination += input.value
+		total_contamination = 0
+		for i,input in enumerate(funding_inputs):
+			total_contamination += input.value # fix so you do not double count coins.
+			input.rank = i
+			self.addNode(input)
 			contaminated_txs.add(input.transaction)
 
-		while len(contaminated_txs) > 0:
+		while len(contaminated_txs) > 0 and len(self.nodes) < 50:
 			tx_id, tx = contaminated_txs.pop()
 
-			tx_contamination = np.zeros(len(funding_inputs))			
+			tx_contamination = np.zeros(len(funding_inputs))
+			contaminated_outputs = []		
+			contaminations = []	
+			tx_rank = 0
 			for output in tx.outputs:
 				if output in funding_inputs:
 					if output.contamination is None:
@@ -59,20 +63,25 @@ class TransactionGraph:
 					output.contamination[funding_inputs.index(output)] = new_contamination
 				if output.contamination is not None:
 					tx_contamination += output.contamination
+					contaminated_outputs.append(output)
+					contaminations.append(output.contamination.sum())
+					tx_rank = max(tx_rank,output.rank)
+
+			contaminations = np.array(contaminations)
 			
 			try:
 				input_value = tx.inputValue
-			except KeyError:
+			except KeyError: # tx is a coinbase transaction.
 				continue
 
-			for input in tx.inputs:
+			for i,input in enumerate(tx.inputs):
 				weight = input.value / input_value
 				input.contamination = weight * tx_contamination
-				if input.value > total_contamination / 200:
+				input.rank = 10*tx_rank + i
+				if input.value > total_contamination / 20:
 					contaminated_txs.add(input.transaction)
 					self.addNode(input)
-					self.addEdges(input,tx.outputs)
-					print input
+					self.addEdges([input],contaminated_outputs,weight*contaminations)
 		
 	def forwardInTime(self, address):
 		contaminated_txs = HeapSet(min_heap = True)
@@ -82,118 +91,96 @@ class TransactionGraph:
 
 		for input in funding_inputs:
 			total_contamination += input.value
-			contaminated_txs.add(input.transaction)
+			contaminated_txs.add(input.spend_transaction)
 
-		while len(contaminated_txs) > 0:
+		while len(contaminated_txs) > 0 and len(self.nodes) < 100:
 			tx_id, tx = contaminated_txs.pop()
 
 			tx_contamination = np.zeros(len(funding_inputs))			
+			contaminated_inputs = []
+			contaminations = []
+			tx_rank = 0
 			for input in tx.inputs:
 				if input.contamination is not None:
 					tx_contamination += input.contamination
+					contaminated_inputs.append(input)
+					contaminations.append(input.contamination.sum())
+					tx_rank = max(tx_rank,input.rank)
 			
+			contaminations = np.array(contaminations)
 			input_value = tx.inputValue
 
-			for output in tx.outputs:
+			for i,output in enumerate(tx.outputs):
 				weight = output.value / input_value
 				if output.contamination is None:
 					output.contamination = weight * tx_contamination
+					output.rank = 10*tx_rank + i
 				else:	
 					untouched = output.contamination == 0
 					output.contamination[untouched] = weight * tx_contamination[untouched]
-				if output.contamination.sum() > total_contamination / 200:
+				if output.contamination.sum() > total_contamination / 20:
 					if output.spend_transaction != 'Unspent':
 						contaminated_txs.add(output.spend_transaction)
-					print output
+					self.addNode(output)
+					self.addEdges(contaminated_inputs,[output],weight*contaminations)
 
 	def addNode(self,node):
-		pass
-
-	def addEdges(self,edge):
-		pass
-
-	def connectEdges(self):
-		#print self.nodes
-		for node in self.nodes:
-			for sink, w0, w1 in node.sinks:
-				if sink in self.nodes:
-					self.edges.add((node,sink,w0,w1))
-				#else:
-				#	print 'not relevant!'
-			#print node
-
+		if node not in self.nodes:
+			self.nodes.append(node)
+	
+	def addEdges(self,sources,sinks,weight):
+		i = 0
+		for source in sources:	
+			for sink in sinks:
+				if source in self.nodes and sink in self.nodes:
+					self.edges[(source,sink)] = weight[i]
+				i += 1
+	
 	def toDict(self):
-		graph = self.nodes
-		txs = set([output.transaction for output in graph])
-		txs |= set([output.spend_transaction for output in graph])
-		txs = list(txs)
-
-		weights = {}
-		ordering = {}
-		addresses = {}
-		values = {}
-		for i,output in enumerate(graph):
-			taint = output.contamination / output.value
-			weights[output.spend_transaction] = taint
-			weights[output.transaction] = taint
-			ordering[output.transaction] = i
-			ordering[output.spend_transaction] = i
-			addresses[output.transaction] = output.address
-			addresses[output.spend_transaction] = output.address
-			values[output.spend_transaction] = output.value
-			values[output.transaction] = output.value
-
-		node_index_map = {tx: i for i, tx in enumerate(txs)}
-		nodes= []
-		for tx in txs:
+		nodes = []
+		for output in self.nodes:
 			node = {}
-			node['name'] = tx
-			node['color'] = color_function(weights[tx])
-			node['xpos'] = ordering[tx]
-			node['btc_value'] = values[tx] / 1e8
-			node['address'] = addresses[tx]
+			node['name'] = output.transaction
+			node['color'] = colorFunction(output.contamination.sum() / output.value)
+			node['btc_value'] = output.value / 1e8
+			node['address'] = output.address
+			node['rank'] = output.rank
 			nodes.append(node)
-		#nodes = [{'name':tx[:10],'color':weights[tx]} for tx in txs]
 
-		edges = []
-		for output in graph:
-			source = node_index_map[output.transaction]
-			sink = node_index_map[output.spend_transaction]
-			edge = {'source': source, 'target': sink, 'value': output.contamination.sum()}
-			edges.append(edge)
+		links = []
+		for edge in self.edges:
+			link = {}
+			link['source'] = self.nodes.index(edge[0])
+			link['target'] = self.nodes.index(edge[1])
+			link['value'] = self.edges[edge] / 1e8
+			links.append(link)
 		
-		return {'nodes': nodes, 'links': edges}
+		return {'nodes': nodes, 'links': links}
 
-def color_function(t):
-	r = t[0]
-	try:
-		g = t[1]
-	except IndexError:
-		g = 0
-	try: 
-		b = t[2]
-	except IndexError:
-		b = 0
-	return '#' + colorScale(r) + colorScale(g) + colorScale(b) 
+def colorFunction(x):
+	return '#' + colorScale(x) + colorScale(0) + colorScale(0) 
 
 def colorScale(x):
-	x = int(255 * np.sqrt(x))
-	try:
-		result = chr(x).encode('hex')
-	except ValueError:
-		print x
+	x = int(255 * x)
+	result = chr(x).encode('hex')
 	return result
 
 
 
 if __name__ == '__main__':
-	pizza_address = '17SkEw2md5avVNyYgj6RiXuQKNwkXaxFyQ'
+	test_address = '15Fdz9eLuVJcq19vDeVPqXu1B6wuoyQ2kw'
 	g = TransactionGraph()
-	g.addSourceAddress(pizza_address)
+	g.addSourceAddress(test_address)
 
 	db_tools.instances = {}
 
-	mtgox_address = '1eHhgW6vquBYhwMPhQ668HPjxTtpvZGPC'
-	g = TransactionGraph()
-	g.addSourceAddress(mtgox_address)
+	#pizza_address = '17SkEw2md5avVNyYgj6RiXuQKNwkXaxFyQ'
+	#g = TransactionGraph()
+	#g.addSourceAddress(pizza_address)
+
+	#db_tools.instances = {}
+
+	#mtgox_address = '1eHhgW6vquBYhwMPhQ668HPjxTtpvZGPC'
+	#g = TransactionGraph()
+	#g.addSourceAddress(mtgox_address)
 	#g.connectEdges()

@@ -100,7 +100,8 @@ class Transaction(str):
 		try:
 			return float(cur.fetchone()[0])
 		except TypeError:
-			raise KeyError('Looking for inputs to a coinbase transaction')
+			return self.outputValue #this is a coinbase transaction.
+			#raise KeyError('Looking for inputs to a coinbase transaction')
 
 	@property
 	def outputValue(self):
@@ -165,8 +166,8 @@ class Coins:
 		string = 'height: %i ' %self.height
 		string += 'address: %s ' %self.address
 		string += 'value: %.2e ' %self.value
-		string += 'contamination: %.2e ' %self.contamination.sum()
-		string += 'taint: %.2f ' %(self.contamination.sum() / self.value)
+		#string += 'contamination: %.2e ' %self.contamination.sum()
+		#string += 'taint: %.2f ' %(self.contamination.sum() / self.value)
 		#assert self.contamination[0] <= self.value
 		#string += 'taint: %e ' %(self.contamination.max() / self.value)
 		#string += 'backward_taint: %e ' %(self.backward_contamination[0] / self.value)

@@ -2,15 +2,14 @@ body { margin: 50px; }
 
 #chart { padding-top: 25px; }
 
-.node rect { cursor: move; stroke: #000; stroke-opacity: 1; shape-rendering: geometricPrecision; }
+.node rect { cursor: move; stroke: #000; stroke-opacity: 1; stroke-width: 0; shape-rendering: geometricPrecision; }
 .link { fill: #000; fill-opacity: .2; stroke: none; }
 .node text { pointer-events: none;vtext-shadow: 0 1px 0 #fff; }
  
-
-
-#address_input_box { width: 650px; }
+#address_input_box { width: 675px; }
 .select2-selection, .selection { outline: none; }
-.select2-container { display: block; box-shadow: 1px 2px 3px rgba(0,0,0,.3); border-radius: 4 }
+.select2-container { display: block; box-shadow: 1px 2px 3px rgba(0,0,0,.3); border-radius: 4; max-height: 30px; }
+
 
 #information { padding-top: 15px; padding-bottom: 5px; margin-bottom: 10px; overflow: hidden; font-size: 12pt; }
 #information ul, #information li { margin: 0; padding: 0; }
