@@ -13,26 +13,26 @@
     <title>BitCrumbs</title>  
   </head>
   <body>
-    <!--<h1>BitCrumbs</h1>-->
     <div class="wrapper">
-      <select class="address_input" id="address_input_box"></select>
+        <label id="address_input_text">Follow the bitcoins at </label>
+        <select class="address_input" id="address_input_box"></select>
       <div id="information">
         <ul>
           <li class="col-md-8">
-            <label>Address</label>
+            <label>Address:</label>
             <span class="dynamic-content" id="address"></span>
           </li>
           <li class="col-md-4">
-            <label>Value</label>
             <span class="dynamic-content" id="value"></span>
+            <label>bitcoins at this output</label>
           </li>
           <li class="col-md-8">
-            <label>Transaction Hash</label>
+            <label>Transaction Hash:</label>
             <span class="dynamic-content" id="transaction_hash"></span>
           </li>
           <li class="col-md-4">
-            <label>Taint</label>
             <span class="dynamic-content" id="taint"></span>
+            <label>of these coins pass through the tracked address</label>
           </li>
         </ul>
       </div>

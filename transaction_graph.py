@@ -27,6 +27,8 @@ class HeapSet:
 	def __len__(self):
 		return len(self.heap)
 
+cutoff = 40
+
 class TransactionGraph:	
 	def __init__(self):
 		self.nodes = []
@@ -40,27 +42,32 @@ class TransactionGraph:
 	def backwardInTime(self, address):
 		contaminated_txs = HeapSet(min_heap = False)
 		
-		funding_inputs = address.inputs
+		self.funding_inputs = address.inputs
+		self.funding_ids = np.array([input.transaction.id for input in self.funding_inputs])
+
 		total_contamination = 0
-		for i,input in enumerate(funding_inputs):
+		for i,input in enumerate(self.funding_inputs):
 			total_contamination += input.value # fix so you do not double count coins.
 			input.rank = i
-			self.addNode(input)
 			contaminated_txs.add(input.transaction)
 
 		while len(contaminated_txs) > 0 and len(self.nodes) < 50:
 			tx_id, tx = contaminated_txs.pop()
 
-			tx_contamination = np.zeros(len(funding_inputs))
+			tx_contamination = np.zeros(len(self.funding_inputs))
 			contaminated_outputs = []		
 			contaminations = []	
 			tx_rank = 0
 			for output in tx.outputs:
-				if output in funding_inputs:
+				if output in self.funding_inputs:
 					if output.contamination is None:
-						output.contamination = np.zeros(len(funding_inputs))
+						output.contamination = np.zeros(len(self.funding_inputs))
 					new_contamination = output.value - output.contamination.sum()
-					output.contamination[funding_inputs.index(output)] = new_contamination
+					assert output.contamination[self.funding_inputs.index(output)] == 0
+					output.contamination[self.funding_inputs.index(output)] = new_contamination
+					assert output.contamination.sum()+1 > output.value, (output.contamination.sum(), output.value) 
+					if output.contamination.sum() > total_contamination / cutoff:
+						self.addNode(output)
 				if output.contamination is not None:
 					tx_contamination += output.contamination
 					contaminated_outputs.append(output)
@@ -78,7 +85,8 @@ class TransactionGraph:
 				weight = input.value / input_value
 				input.contamination = weight * tx_contamination
 				input.rank = 10*tx_rank + i
-				if input.value > total_contamination / 20:
+				if input.value > total_contamination / cutoff:
+					assert input.value >= input.contamination.sum()
 					contaminated_txs.add(input.transaction)
 					self.addNode(input)
 					self.addEdges([input],contaminated_outputs,weight*contaminations)
@@ -106,19 +114,25 @@ class TransactionGraph:
 					contaminated_inputs.append(input)
 					contaminations.append(input.contamination.sum())
 					tx_rank = max(tx_rank,input.rank)
-			
+
 			contaminations = np.array(contaminations)
 			input_value = tx.inputValue
-
+			assert tx_contamination.sum() <= input_value
 			for i,output in enumerate(tx.outputs):
 				weight = output.value / input_value
+				assert weight <= 1
 				if output.contamination is None:
 					output.contamination = weight * tx_contamination
+					#assert tx_contamination.sum() <= input_value
+					#assert weight <= 1
+					assert output.contamination.sum() <= output.value + .1, ('%e' %output.contamination.sum(),'%e' %output.value)
 					output.rank = 10*tx_rank + i
 				else:	
-					untouched = output.contamination == 0
+					untouched = self.funding_ids >= tx_id
 					output.contamination[untouched] = weight * tx_contamination[untouched]
-				if output.contamination.sum() > total_contamination / 20:
+					assert output.contamination.sum() <= output.value + .1, ('%e' %output.contamination.sum(),'%e' %output.value)
+				if output.contamination.sum() > total_contamination / cutoff:
+					#assert output.contamination.sum() <= output.value
 					if output.spend_transaction != 'Unspent':
 						contaminated_txs.add(output.spend_transaction)
 					self.addNode(output)
@@ -135,7 +149,7 @@ class TransactionGraph:
 				if source in self.nodes and sink in self.nodes:
 					self.edges[(source,sink)] = weight[i]
 				i += 1
-	
+
 	def toDict(self):
 		nodes = []
 		for output in self.nodes:
@@ -168,9 +182,10 @@ def colorScale(x):
 
 
 if __name__ == '__main__':
-	test_address = '15Fdz9eLuVJcq19vDeVPqXu1B6wuoyQ2kw'
+	test_address = '18c11RMANxg7aq6eqJ4MPe6dqvcwZtAAwk'
 	g = TransactionGraph()
 	g.addSourceAddress(test_address)
+	print g.toDict()
 
 	db_tools.instances = {}
 

@@ -4002,7 +4002,7 @@ define('select2/i18n/en',[],function () {
       return 'Loading more results…';
     },
     maximumSelected: function (args) {
-      var message = 'Maximum of two addresses currently supported';
+      var message = 'Limited to one address for now.';
 
       if (args.maximum != 1) {
         message += 's';

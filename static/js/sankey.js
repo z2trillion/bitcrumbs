@@ -284,16 +284,15 @@ d3.sankey = function() {
     });
 
     function ascendingSourceDepth(a, b) {
-      return a.source.rank - b.source.rank;
+      return center(a.source) - center(b.source);
     }
 
     function ascendingTargetDepth(a, b) {
-      return a.target.rank - b.target.rank;
+      return center(a.target) - center(b.target);
     }
   }
 
   function center(node) {
-		//return 0
     return node.y + node.dy / 2;
   }
 

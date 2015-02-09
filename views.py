@@ -3,7 +3,7 @@ from flask import request,jsonify
 import json,os
 from BitCrumbs import app
 import pymysql as mdb
-from transaction_graph import TransactionGraph
+from transaction_graph2 import TransactionGraph
 
 con = mdb.connect('localhost','root','','bitcoin')
 
@@ -18,7 +18,9 @@ def bitcoinFlow():
 	#print address.split(',') 
 	graph = TransactionGraph()
 	graph.addSourceAddress(address.split(',')[0])
-	return jsonify(graph.toDict())
+	result = jsonify(graph.toDict())
+	graph.clear()
+	return result
 
 @app.route('/addresses')
 def addresses():

@@ -74,28 +74,67 @@ function renderSankey(graph) {
 	    .enter().append("g")
 	    .attr("class", "node")
 	    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
-	    .on("mouseover", nodeMouseover)
+	    //.on("mouseover", nodeMouseover)
 	    //.on("mouseout",nodeMouseout)
 	    .call(d3.behavior.drag()
 	    	.origin(function(d) { return d; })
 	    	.on("dragstart", function() { this.parentNode.appendChild(this); })
 	    	.on("drag", dragmove));
+
+	node.append("rect")
+		.attr("stroke-width", function(d){ return d.is_source})
+	    .attr("height", function(d) { return d.dy; })
+	    .attr("width", width)
+	    .attr("fill" , coloring);
+	function width(d) {
+		if (d.is_source == 0) {
+			return sankey.nodeWidth();
+		} else {
+			return sankey.nodeWidth();
+		}; 
+	};
+
+	node.on("mouseover", nodeMouseover);
+
+	//svg.selectAll(".rect")
+	//	.on('mouseover',rectMouseover);
+	//function rectMouseover(element) {
+	//	console.log(element);
+	//};
 	
+	//var myNodes = $(".node");
+
 	function nodeMouseover(element) {
 		information.find("#address").text(element.address);
 		information.find("#transaction_hash").text(element.name);
-		information.find("#taint").text(element.color);
-		information.find("#value").text("\u0e3f " + element.btc_value);
+		information.find("#taint").text( Math.round(100 * element.contamination / element.btc_value)+ '%');
+		information.find("#value").text(element.btc_value);
+		//console.log(element)
+		//d3.selectAll()
+		//console.log(d3.selectAll(".node"))
+		//d3.selectAll("rect").forEach(function(d){console.log(d)});
+		//myNodes.style("stroke-width", 3);
 		//x = element.x + 120
 		//y = d3.event.pageY - 25
 		//information.css({left: x, top: y});
 		//information.toggleClass("hidden",false);
 	};
+	function blargh(d){
+		d.style("stroke-width", function(d){ return d.is_source});
+	};
 
 	node.append("rect")
+		.attr("stroke-width", function(d){ return d.is_source})
 	    .attr("height", function(d) { return d.dy; })
-	    .attr("width", sankey.nodeWidth())
+	    .attr("width", width)
 	    .attr("fill" , coloring);
+	function width(d) {
+		if (d.is_source == 0) {
+			return sankey.nodeWidth();
+		} else {
+			return sankey.nodeWidth();
+		}; 
+	};
 	function coloring(d) {
 		return d.color
 	};
@@ -108,8 +147,8 @@ function renderSankey(graph) {
 
 $(document).ready(function() {
 	$(".address_input").select2({
-	  	placeholder: "Enter bitcoin address(es) here!",
-	  	maximumSelectionLength: 2,
+	  	placeholder: "Enter bitcoin address here!",
+	  	maximumSelectionLength: 1,
 	  	minimumInputLength: 1,
 	  	multiple: true,
 	  	ajax: {

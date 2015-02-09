@@ -138,6 +138,7 @@ def multiton(cls):
 class Coins:
 	def __init__(self, row):
 		#print row
+		self.id = row[0]
 		row = row[1:]
 		self.transaction = Transaction(row[0])
 		self.output_index = row[1]
@@ -147,7 +148,7 @@ class Coins:
 		self.address = Address(row[5])
 
 		self.sinks = set([])
-		self.is_source = False
+		self.is_source = 0
 		self.contamination = None
 
 	def nextOutputs(self):
@@ -166,8 +167,8 @@ class Coins:
 		string = 'height: %i ' %self.height
 		string += 'address: %s ' %self.address
 		string += 'value: %.2e ' %self.value
-		#string += 'contamination: %.2e ' %self.contamination.sum()
-		#string += 'taint: %.2f ' %(self.contamination.sum() / self.value)
+		string += 'contamination: %.2e ' %self.contamination.sum()
+		string += 'taint: %.2f ' %(self.contamination.sum() / self.value)
 		#assert self.contamination[0] <= self.value
 		#string += 'taint: %e ' %(self.contamination.max() / self.value)
 		#string += 'backward_taint: %e ' %(self.backward_contamination[0] / self.value)
