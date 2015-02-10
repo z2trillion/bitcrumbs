@@ -109,18 +109,15 @@ function renderSankey(graph) {
 		information.find("#transaction_hash").text(element.name);
 		information.find("#taint").text( Math.round(100 * element.contamination / element.btc_value)+ '%');
 		information.find("#value").text(element.btc_value);
-		//console.log(element)
-		//d3.selectAll()
-		//console.log(d3.selectAll(".node"))
-		//d3.selectAll("rect").forEach(function(d){console.log(d)});
-		//myNodes.style("stroke-width", 3);
-		//x = element.x + 120
-		//y = d3.event.pageY - 25
-		//information.css({left: x, top: y});
-		//information.toggleClass("hidden",false);
-	};
-	function blargh(d){
-		d.style("stroke-width", function(d){ return d.is_source});
+		d3.selectAll('rect').attr("opacity",fadeFuture)
+		d3.selectAll('.link').attr("opacity",fadeFuture)
+		function fadeFuture(d) {
+			if (d.time <= element.time) {
+				return 1;
+			} else {
+				return .2;
+			};
+		};
 	};
 
 	node.append("rect")

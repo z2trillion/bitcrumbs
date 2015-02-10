@@ -135,6 +135,7 @@ class TransactionGraph:
 			node['rank'] = output.rank
 			node['is_source'] = output.is_source
 			node['contamination'] = output.contamination.sum() / 1e8
+			node['time'] = output.height
 			nodes.append(node)
 
 		links = []
@@ -145,6 +146,7 @@ class TransactionGraph:
 			link['source'] = self.nodes.index(source)
 			link['target'] = self.nodes.index(target)
 			link['value'] = self.edges[(source, target)] / 1e8
+			link['time'] = target.height
 			links.append(link)
 		
 		return {'nodes': nodes, 'links': links}
