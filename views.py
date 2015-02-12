@@ -24,15 +24,23 @@ def bitcoinFlow():
 
 @app.route('/addresses')
 def addresses():
-	with con:
-		cur = con.cursor()
-		address_query = request.args.get('q','',type=str)
-		command = 'SELECT DISTINCT address FROM tx_outputs '
-		command += 'WHERE spendHash NOT LIKE "Unspent" '
-		command += 'AND value > 10000 '
-		command += 'AND address LIKE "%s%%" LIMIT 10' % address_query
-		cur.execute(command)
-		results = cur.fetchall()
+	address_query = request.args.get('q','',type=str)
+	command = 'SELECT DISTINCT address FROM tx_outputs '
+	command += 'WHERE spendHash NOT LIKE "Unspent" '
+	command += 'AND value > 10000 '
+	command += 'AND address LIKE "%s%%" LIMIT 10' % address_query
+
+	try:
+		with con:
+			cur = con.cursor()
+			cur.execute(command)
+			results = cur.fetchall()
+	except: # assuming this is "internal server error."
+		con = mdb.connect('localhost','root','password','bitcoin')
+		with con:
+			cur = con.cursor()			
+			cur.execute(command)
+			results = cur.fetchall()
 	
 	address_list = []
 	for result in results:

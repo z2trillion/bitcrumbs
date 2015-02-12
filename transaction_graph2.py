@@ -31,7 +31,7 @@ cutoff = 50
 
 class TransactionGraph:	
 	def __init__(self):
-		self.nodes = []
+		self.nodes = set([])
 		self.edges = {}
 
 	def clear(self):
@@ -88,6 +88,7 @@ class TransactionGraph:
 
 		for input in self.funding_inputs:
 			total_contamination += input.value
+			input.can_be_collapsed = False
 			contaminated_inputs.add(input)
 
 		while len(contaminated_inputs) > 0 and len(self.nodes) < 100:
@@ -96,12 +97,16 @@ class TransactionGraph:
 			if input.contamination.sum() < total_contamination / cutoff:
 				continue
 			elif input.spend_transaction == 'Unspent':
+				self.addNode(input)
 				continue	
 			else:
 				self.addNode(input)
 
-			for i, output in enumerate(input.spend_transaction.outputs):
-				weight = output.value / input.spend_transaction.inputValue
+			outputs = input.spend_transaction.outputs
+			input_value = input.spend_transaction.inputValue
+
+			for i, output in enumerate(outputs):
+				weight = output.value / input_value
 				if output.contamination is None:
 					output.contamination = weight * input.contamination
 				else:
@@ -109,23 +114,45 @@ class TransactionGraph:
 					output.contamination[mask] += weight * input.contamination[mask]
 				assert output.contamination.sum() <= output.value + .1
 				output.rank = 10*input.rank + i
+
+				if len(outputs) == 1:
+					output.can_be_collapsed = False
+					output.parent = [input]
+				else:
+					output.can_be_collapsed = False
+				
+				if input.can_be_collapsed:
+					self.addEdge(input.parent[0],output,weight * input.contamination.sum())
+					output.parent = [input.parent[0]]
+					self.removeNode(input)
+					self.removeEdge(input.parent[0],input)
+				else:
+					self.addEdge(input, output, weight * input.contamination.sum())
+
 				contaminated_inputs.add(output)
-				self.addEdge(input, output, weight * input.contamination.sum())
 
 	def addNode(self,node):
-		if node not in self.nodes:
-			self.nodes.append(node)
+		self.nodes.add(node)
 	
+	def removeNode(self,node):
+		try:
+			self.nodes.remove(node)
+		except KeyError:
+			pass
+
 	def addEdge(self,source,sink,weight):
 		self.edges[(source,sink)] = weight
 
-	def removeChains(self):
-		# count number of inputs and outputs to a node.
-		# if 1 and 1, then do
-		pass
+	def removeEdge(self,source,sink):
+		print 'hi!!!'
+		try:
+			del self.edges[(source,sink)]
+		except KeyError:
+			pass
 	
 	def toDict(self):
 		nodes = []
+		self.nodes = list(self.nodes)
 		for output in self.nodes:
 			node = {}
 			node['name'] = output.transaction
